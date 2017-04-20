@@ -12,11 +12,22 @@
  * }
  * ```
  */
-export default function autobind(...args) {
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+exports['default'] = autobind;
+
+function autobind() {
+  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
   if (args.length === 1) {
-    return boundClass(...args);
+    return boundClass.apply(undefined, args);
   } else {
-    return boundMethod(...args);
+    return boundMethod.apply(undefined, args);
   }
 }
 
@@ -25,7 +36,7 @@ export default function autobind(...args) {
  */
 function boundClass(target) {
   // (Using reflect to get all keys including symbols)
-  let keys;
+  var keys = undefined;
   // Use Reflect if exists
   if (typeof Reflect !== 'undefined' && typeof Reflect.ownKeys === 'function') {
     keys = Reflect.ownKeys(target.prototype);
@@ -37,13 +48,13 @@ function boundClass(target) {
     }
   }
 
-  keys.forEach(key => {
+  keys.forEach(function (key) {
     // Ignore special case target method
     if (key === 'constructor') {
       return;
     }
 
-    let descriptor = Object.getOwnPropertyDescriptor(target.prototype, key);
+    var descriptor = Object.getOwnPropertyDescriptor(target.prototype, key);
 
     // Only methods need binding
     if (typeof descriptor.value === 'function') {
@@ -59,25 +70,25 @@ function boundClass(target) {
  * and memoize the result against a symbol on the instance
  */
 function boundMethod(target, key, descriptor) {
-  let fn = descriptor.value;
+  var fn = descriptor.value;
 
   if (typeof fn !== 'function') {
-    throw new Error(`@autobind decorator can only be applied to methods not: ${typeof fn}`);
+    throw new Error('@autobind decorator can only be applied to methods not: ' + typeof fn);
   }
 
   // In IE11 calling Object.defineProperty has a side-effect of evaluating the
   // getter for the property which is being replaced. This causes infinite
   // recursion and an "Out of stack space" error.
-  let definingProperty = false;
+  var definingProperty = false;
 
   return {
     configurable: true,
-    get() {
+    get: function get() {
       if (definingProperty || this === target.prototype || this.hasOwnProperty(key)) {
         return fn;
       }
 
-      let boundFn = fn.bind(this);
+      var boundFn = fn.bind(this);
       definingProperty = true;
       Object.defineProperty(this, key, {
         value: boundFn,
@@ -89,3 +100,4 @@ function boundMethod(target, key, descriptor) {
     }
   };
 }
+module.exports = exports['default'];
